@@ -1,0 +1,60 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Cloud Computing Final Project
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: cc-store-photos
+
+  cc-index-photos:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Role: arn:aws:iam::062343075655:role/superoleforlazypppl
+      Runtime: python3.9
+      FunctionName: cc=index-photos
+      MemorySize: 128
+      Timeout: 30
+      CodeUri: ./lambda_code/cc-index-photos
+      Events:
+        S3Trigger:
+          Type: S3
+          Properties:
+            Bucket: !Ref cc-store-photos
+            Events: s3:ObjectCreated:*
+      DependsOn: lambda_policy
+
+  search-photos:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !Ref lambda_policy
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      FunctionName: search-photos
+      MemorySize: 128
+      Timeout: 30
+      CodeUri: ./lambda_code/search-photos
+    DependsOn: lambda_policy
+
+  lambda_policy:
+    Type: AWS::IAM::Policy
+    Properties:
+        AssumePolicyDocument:
+          Version: "2012-10-17"
+          Statemnt:
+            -Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Description: Role for lambda functions
+        Policies:
+            -PolicyName: GeneralLambda
+              PolicyDocument:
+                  Version: "2012-10-17"
+                  Statement:
+                    - Effect: Allow
+                    Action: ["rekognition:DetectLabels", "s3:PutObject", "lex:RecognizeText"]
